@@ -1,0 +1,4 @@
+-cp src
+-lib figma
+-main FigmaXFLGenerate
+-neko bin/figma.n
