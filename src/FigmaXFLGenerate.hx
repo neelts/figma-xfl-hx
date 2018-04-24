@@ -1,4 +1,5 @@
 package ;
+import String;
 import format.svg.SVGGroup;
 import figma.FigmaAPI;
 import format.svg.Matrix;
@@ -45,6 +46,7 @@ class FigmaXFLGenerate {
 	private var xflRoot:String;
 	private var xflPath:String;
 	private var libraryPath:String;
+	private var metaPath:String;
 
 	private var images:NMap<SVGData>;
 
@@ -73,10 +75,9 @@ class FigmaXFLGenerate {
 
 	private function initExport():Void {
 		filename = content.name;
-		xflPath = '$xflRoot/$filename';
-		libraryPath = '$xflPath/LIBRARY';
-		if (!xflPath.exists()) xflPath.createDirectory();
-		if (!libraryPath.exists()) libraryPath.createDirectory();
+		xflPath = '$xflRoot/$filename'.initDir();
+		libraryPath = '$xflPath/LIBRARY'.initDir();
+		metaPath = '$xflPath/META-INF'.initDir();
 	}
 
 	private function getImagesList():Void {
@@ -96,16 +97,29 @@ class FigmaXFLGenerate {
 			var ids:NMap<String> = response.data.images.toMap();
 			images = new NMap<SVGData>();
 			for (id in ids.keys()) {
-				var load:Thread = Thread.create(loadImage);
 				var imageLoad:ImageLoad = {
-					loaded:images, total:ids.length, id:id, url:ids.get(id), complete:imagesLoaded
+					loaded:images, total:ids.length, id:id,
+					url:ids.get(id), complete:imagesLoaded, add:addImage
 				};
-				load.sendMessage(imageLoad);
+				var cached:String = '$metaPath/${ids.get(id).fromLast('/')}.svg';
+				if (cached.exists()) {
+					trace('Found cached: $cached');
+					addImage(imageLoad, cached.load());
+				} else {
+					var load:Thread = Thread.create(loadImage);
+					load.sendMessage(imageLoad);
+				}
 			}
 		} else {
 			trace(response.error);
 			Sys.exit(1);
 		}
+	}
+
+	private function addImage(imageLoad:ImageLoad, data:String):Void {
+		imageLoad.loaded.set(imageLoad.id, new SVGData(data.parse()));
+		trace('Image: ${imageLoad.id} loaded. Left: ${imageLoad.total - imageLoad.loaded.length}');
+		if (imageLoad.loaded.length == imageLoad.total) imageLoad.complete(imageLoad.loaded);
 	}
 
 	private function imagesLoaded(loaded:NMap<SVGData>):Void {
@@ -117,10 +131,9 @@ class FigmaXFLGenerate {
 		var imageLoad:ImageLoad = Thread.readMessage(true);
 		var http:Http = new Http(imageLoad.url);
 		http.onData = function(_) {
-			'$libraryPath/${imageLoad.id.replace(":", "_")}.svg'.save(http.responseData);
-			imageLoad.loaded.set(imageLoad.id, new SVGData(http.responseData.parse()));
-			trace('Image: ${imageLoad.id} loaded. Left: ${imageLoad.total - imageLoad.loaded.length}');
-			if (imageLoad.loaded.length == imageLoad.total) imageLoad.complete(imageLoad.loaded);
+			var svg:String = '$metaPath/${imageLoad.url.fromLast('/')}.svg';
+			if (!svg.exists()) svg.save(http.responseData);
+			imageLoad.add(imageLoad, http.responseData);
 		}
 		http.onError = function(m:String) {
 			trace('Error! $m');
@@ -303,6 +316,13 @@ class FigmaXFLGenerate {
 	}
 
 	public static inline function isNotEmpty<T>(array:Array<T>):Bool return array != null && array.length > 0;
+
+	public static inline function fromLast(s:String, c:String):String return s.substr(s.lastIndexOf(c) + 1);
+
+	public static inline function initDir(path:String):String {
+		if (!path.exists()) path.createDirectory();
+		return path;
+	}
 }
 
 class NMap<V> {
@@ -340,6 +360,7 @@ typedef ImageLoad = {
 	var url:String;
 	var total:Int;
 	var complete:NMap<SVGData> -> Void;
+	var add:ImageLoad -> String -> Void;
 }
 
 typedef LibrarySymbol = {

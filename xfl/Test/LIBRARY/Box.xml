@@ -6,7 +6,7 @@
           <frames>
             <DOMFrame index="0" keyMode="9728">
               <elements>
-                <DOMRectangleObject objectWidth="100" objectHeight="100" lockFlag="true">
+                <DOMRectangleObject objectWidth="100" objectHeight="100" x="0" y="0" lockFlag="true">
                   <fill>
                     <SolidColor color="#009900"/>
                   </fill>
