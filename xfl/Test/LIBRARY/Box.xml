@@ -1,4 +1,4 @@
-<DOMSymbolItem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://ns.adobe.com/xfl/2008/" name="Box" itemID="5adc75e0-00000244" lastModified="1524750604">
+<DOMSymbolItem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://ns.adobe.com/xfl/2008/" name="Box" itemID="5adc75e0-00000244" lastModified="1524769672">
   <timeline>
     <DOMTimeline name="Box">
       <layers>
@@ -6,10 +6,17 @@
           <frames>
             <DOMFrame index="0" keyMode="9728">
               <elements>
-                <DOMRectangleObject objectWidth="100" objectHeight="100" x="0" y="0" selected="true" lockFlag="true" topLeftRadius="10" topRightRadius="10" bottomLeftRadius="10" bottomRightRadius="10">
-                  <fill>
-                    <SolidColor color="#009900"/>
-                  </fill>
+                <DOMRectangleObject objectWidth="100" objectHeight="100" x="0" y="0" selected="true" lockFlag="true">
+                  <matrix>
+                    <Matrix a="0.965927124023438" b="0.258804321289063" c="-0.258804321289063" d="0.965927124023438" tx="25.9"/>
+                  </matrix>
+                  <stroke>
+                    <SolidStroke scaleMode="normal">
+                      <fill>
+                        <SolidColor color="#FF0000"/>
+                      </fill>
+                    </SolidStroke>
+                  </stroke>
                 </DOMRectangleObject>
               </elements>
             </DOMFrame>

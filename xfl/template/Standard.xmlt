@@ -1,5 +1,5 @@
 ::if (matrix != null)::
 <matrix>
-    <Matrix a="::matrix.a::" b="::matrix.b::" c="::matrix.c::" d="::matrix.d::" tx="::matrix.tx::" ty="::matrix.ty::"/>
+    <Matrix ::if (matrix.a != 1)::a="::matrix.a::"::end:: ::if (matrix.b != 0)::b="::matrix.b::"::end:: ::if (matrix.c != 0)::c="::matrix.c::"::end:: ::if (matrix.d != 1)::d="::matrix.d::"::end:: ::if (matrix.tx != 0)::tx="::matrix.tx::"::end:: ::if (matrix.ty != 0)::ty="::matrix.ty::"::end::/>
 </matrix>
 ::end::
