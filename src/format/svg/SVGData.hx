@@ -66,6 +66,8 @@ class SVGData extends SVGGroup {
 
 	private function applyTransform(ioMatrix:Matrix, inTrans:String):Float {
 
+		trace([ioMatrix, inTrans]);
+
 		var scale = 1.0;
 		if (mTranslateMatch.match(inTrans)) {
 
@@ -126,6 +128,23 @@ class SVGData extends SVGGroup {
 		return scale;
 	}
 
+	public function getElement<T>(type:DisplayElement, root:SVGGroup = null):T {
+
+		if (root == null) root = this;
+
+		for (e in root.children) {
+			var v:Any = switch (e) {
+				case DisplayElement.DisplayPath(path): path;
+				case DisplayElement.DisplayRect(rect): rect;
+				case DisplayElement.DisplayText(text): text;
+				case DisplayElement.DisplayGroup(group): return getElement(type, group);
+			}
+			if (Type.enumConstructor(e) == Type.enumConstructor(type)) return v;
+		}
+
+		return null;
+	}
+
 	private function dumpGroup(g:SVGGroup, indent:String) {
 
 		trace(indent + "Group:" + g.name);
@@ -134,8 +153,9 @@ class SVGData extends SVGGroup {
 		for (e in g.children) {
 			switch (e) {
 				case DisplayElement.DisplayPath(path): trace(indent + "Path" + "  " + path.matrix);
-				case DisplayElement.DisplayGroup(group): dumpGroup(group, indent + "   ");
+				case DisplayElement.DisplayRect(rect): trace(indent + "Rect" + "  " + rect.matrix);
 				case DisplayElement.DisplayText(text): trace(indent + "Text " + text.text);
+				case DisplayElement.DisplayGroup(group): dumpGroup(group, indent + "   ");
 			}
 		}
 	}
@@ -345,7 +365,7 @@ class SVGData extends SVGGroup {
 			} else if (name == "path" || name == "line" || name == "polyline") {
 				g.children.push(DisplayPath(loadPath(el, matrix, styles, false, false)));
 			} else if (name == "rect") {
-				g.children.push(DisplayPath(loadPath(el, matrix, styles, true, false)));
+				g.children.push(DisplayRect(loadRect(el, matrix, styles)));
 			} else if (name == "polygon") {
 				g.children.push(DisplayPath(loadPath(el, matrix, styles, false, false)));
 			} else if (name == "ellipse") {
@@ -366,6 +386,44 @@ class SVGData extends SVGGroup {
 		return g;
 	}
 
+	public function loadRect(inPath:Xml, matrix:Matrix, inStyles:StringMap<String>):RectShape {
+
+		var rect:RectShape = new RectShape();
+		fillShape(inPath, matrix, inStyles, rect);
+
+		if (inPath.exists("x")) rect.x = Std.parseFloat(inPath.get("x"));
+		if (inPath.exists("y")) rect.y = Std.parseFloat(inPath.get("y"));
+		rect.width = Std.parseFloat(inPath.get("width"));
+		rect.height = Std.parseFloat(inPath.get("height"));
+		if (inPath.exists("rx") || inPath.exists("ry")) rect.radius = Math.max(Std.parseFloat(inPath.get("rx")), Std.parseFloat(inPath.get("ry")));
+
+		return rect;
+	}
+
+	private function fillShape(inPath:Xml, matrix:Matrix, styles:StringMap<String>, shape:Shape):Void {
+
+		if (inPath.exists("transform")) {
+			matrix = matrix.clone();
+			applyTransform(matrix, inPath.get("transform"));
+		}
+
+		shape.fill = getFillStyle("fill", inPath, styles);
+		shape.alpha = getFloatStyle("opacity", inPath, styles, 1.0);
+		shape.fill_alpha = getFloatStyle("fill-opacity", inPath, styles, 1.0);
+		shape.stroke_alpha = getFloatStyle("stroke-opacity", inPath, styles, 1.0);
+		shape.stroke_colour = getStrokeStyle("stroke", inPath, styles, null);
+		shape.stroke_width = getFloatStyle("stroke-width", inPath, styles, 1.0);
+		shape.stroke_caps = getStyleAndConvert("stroke-linecap", inPath, styles, CapsStyle.NONE, [
+		"round" => CapsStyle.ROUND, "square" => CapsStyle.SQUARE, "butt" => CapsStyle.NONE
+		]);
+		shape.joint_style = getStyleAndConvert("stroke-linejoin", inPath, styles, JointStyle.MITER, [
+		"bevel" => JointStyle.BEVEL, "round" => JointStyle.ROUND, "miter" => JointStyle.MITER
+		]);
+		shape.miter_limit = getFloatStyle("stroke-miterlimit", inPath, styles, 3.0);
+		shape.matrix = matrix;
+		shape.name = name;
+	}
+
 	public function loadPath(inPath:Xml, matrix:Matrix, inStyles:StringMap<String>, inIsRect:Bool, inIsEllipse:Bool, inIsCircle:Bool = false):Path {
 
 		if (inPath.exists("transform")) {
@@ -375,24 +433,10 @@ class SVGData extends SVGGroup {
 
 		var styles = getStyles(inPath, inStyles);
 		var name = inPath.exists("id") ? inPath.get("id") : "";
-		var path = new Path ();
+		var path = new Path();
+		fillShape(inPath, matrix, inStyles, path);
 
-		path.fill = getFillStyle("fill", inPath, styles);
-		path.alpha = getFloatStyle("opacity", inPath, styles, 1.0);
-		path.fill_alpha = getFloatStyle("fill-opacity", inPath, styles, 1.0);
-		path.stroke_alpha = getFloatStyle("stroke-opacity", inPath, styles, 1.0);
-		path.stroke_colour = getStrokeStyle("stroke", inPath, styles, null);
-		path.stroke_width = getFloatStyle("stroke-width", inPath, styles, 1.0);
-		path.stroke_caps = getStyleAndConvert("stroke-linecap", inPath, styles, CapsStyle.NONE, [
-		"round" => CapsStyle.ROUND, "square" => CapsStyle.SQUARE, "butt" => CapsStyle.NONE
-		]);
-		path.joint_style = getStyleAndConvert("stroke-linejoin", inPath, styles, JointStyle.MITER, [
-		"bevel" => JointStyle.BEVEL, "round" => JointStyle.ROUND, "miter" => JointStyle.MITER
-		]);
-		path.miter_limit = getFloatStyle("stroke-miterlimit", inPath, styles, 3.0);
 		path.segments = [];
-		path.matrix = matrix;
-		path.name = name;
 
 		if (inIsRect) {
 

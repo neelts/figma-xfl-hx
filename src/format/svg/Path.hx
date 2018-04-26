@@ -2,21 +2,9 @@ package format.svg;
 
 typedef PathSegments = Array<PathSegment>;
 
-class Path {
-	public function new() { }
+class Path extends Shape {
 
-	public var matrix:Matrix;
-	public var name:String;
-	public var font_size:Float;
-	public var fill:FillType;
-	public var alpha:Float;
-	public var fill_alpha:Float;
-	public var stroke_alpha:Float;
-	public var stroke_colour:Null<Int>;
-	public var stroke_width:Float;
-	public var stroke_caps:CapsStyle;
-	public var joint_style:JointStyle;
-	public var miter_limit:Float;
+	public function new() { super(); }
 
 	public var segments:PathSegments;
 }

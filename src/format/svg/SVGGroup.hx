@@ -30,6 +30,7 @@ class SVGGroup {
 
 enum DisplayElement {
 	DisplayPath(path:Path);
+	DisplayRect(rect:RectShape);
 	DisplayGroup(group:SVGGroup);
 	DisplayText(text:Text);
 }

@@ -1,4 +1,5 @@
 package ;
+import format.svg.RectShape;
 import String;
 import format.svg.SVGGroup;
 import figma.FigmaAPI;
@@ -15,6 +16,7 @@ using sys.FileSystem;
 using haxe.xml.Printer;
 using Xml;
 using StringTools;
+using haxe.Timer;
 
 class FigmaXFLGenerate {
 
@@ -70,7 +72,7 @@ class FigmaXFLGenerate {
 
 		initExport();
 
-		getImagesList();
+		getImagesList.delay(1000);
 	}
 
 	private function initExport():Void {
@@ -85,7 +87,7 @@ class FigmaXFLGenerate {
 		getImages(content.document, images);
 		if (images.length > 0) {
 			// only vector for now
-			trace('Images to load: ${images.length}');
+			trace('Images to load: ${images.length}: $images');
 			figmaAPI.images(fileKey, { ids:images.join(","), scale:1, format:ImageFormat.SVG }, loadImages);
 		} else {
 			beginParsing();
@@ -154,6 +156,8 @@ class FigmaXFLGenerate {
 		'$xflPath/DOMDocument.xml'.save(
 			new Template('$xflRoot/template/DOMDocument.xmlt'.load()).execute(this, this).pretty()
 		);
+
+		Sys.exit(0);
 	}
 
 	private function getImages(node:Node, images:Array<String>):Void {
@@ -208,6 +212,7 @@ class FigmaXFLGenerate {
 			default: null;
 		}
 		if (element != null) {
+			fillElement(element);
 			switch (node.type) {
 				case NodeType.Component, NodeType.Instance, NodeType.Vector: {
 					var vectorNode:FrameNode = cast node;
@@ -222,14 +227,23 @@ class FigmaXFLGenerate {
 	}
 
 	private function getRectangle(rect:RectangleNode):RectangleElement {
-		//var r:SVGData = extract(images.get(rect.id), SVGNode.Rect);
-		//trace(images.get(rect.id));
-		var rectangle:RectangleElement = {
-			type:ElementType.Rectangle, width:rect.absoluteBoundingBox.width, height:rect.absoluteBoundingBox.height,
-			matrix:null
-		};
-		if (rect.fills.isNotEmpty()) rectangle.fill = rect.fills[0].color.hexColor();
-		return rectangle;
+		var r:RectShape = images.get(rect.id).getElement(DisplayElement.DisplayRect(null));
+		trace(r.matrix);
+		var re:RectangleElement = copy(r);
+		if (rect.cornerRadius != null) re.radius = rect.cornerRadius;
+		if (rect.fills.isNotEmpty()) re.fill = rect.fills[0].color.hexColor();
+		re.type = ElementType.Rectangle;
+		return re;
+	}
+
+	private function copy<A, B>(a:A):B {
+		var b:B = cast {};
+		for (f in Reflect.fields(a)) Reflect.setField(b, f, Reflect.field(a, f));
+		return b;
+	}
+
+	private function fillElement(e:Element):Void {
+		e.self = e;
 	}
 
 	private function getFills(fills:Array<Paint>):Array<ShapeFill> {
@@ -268,14 +282,19 @@ class FigmaXFLGenerate {
 		return new Template('$xflRoot/template/Elements.xmlt'.load()).execute({ elements:elements }, this).pretty();
 	}
 
+	public function setStandard(resolve:String -> Dynamic, self:Element):String {
+		trace(self);
+		return new Template('$xflRoot/template/Standard.xmlt'.load()).execute(self, this).pretty();
+	}
+
 	public function setMain(frame:FrameNode):Void {
 		width = frame.absoluteBoundingBox.width;
 		height = frame.absoluteBoundingBox.height;
 		backgroundColor = frame.backgroundColor.hexColor();
 	}
 
-	private static function extract(svg:SVGData, node:SVGNode):SVGGroup {
-		return svg.findGroup(cast node);
+	private static function extract<T>(svg:SVGData, node:SVGNode):T {
+		return cast svg.children[0];
 	}
 
 	private static function guid():String {
@@ -398,6 +417,7 @@ typedef Frame = {
 }
 
 typedef Element = {
+	@:optional var self:Element;
 	var type:ElementType;
 	@:optional var matrix:Matrix;
 }
@@ -422,6 +442,9 @@ typedef ShapeEdge = {
 typedef RectangleElement = { > Element,
 	var width:Float;
 	var height:Float;
+	@:optional var x:Float;
+	@:optional var y:Float;
+	@:optional var radius:Float;
 	@:optional var fill:String;
 }
 
