@@ -252,9 +252,7 @@ class FigmaXFLGenerate {
 			s.fill = switch (sb.fill) {
 				case FillType.FillSolid(color): { type:PaintType.Solid, color:'#${color.hex(6)}', alpha:sb.alpha };
 				case FillType.FillGrad(grad): {
-					trace(">>> " + grad);
 					grad.updateMatrix(new Matrix());
-					trace("<<< " + grad.matrix);
 					var fill:ShapeFill = {
 						type:grad.type == GradientType.LINEAR ? PaintType.GradientLinear : PaintType.GradientRadial,
 						entries:[], matrix:grad.matrix
