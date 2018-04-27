@@ -2,7 +2,7 @@ package format.svg;
 
 typedef PathSegments = Array<PathSegment>;
 
-class Path extends Shape {
+class Path extends ShapeBase {
 
 	public function new() { super(); }
 

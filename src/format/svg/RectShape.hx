@@ -1,5 +1,5 @@
 package format.svg;
-class RectShape extends Shape {
+class RectShape extends ShapeBase {
 
 	public function new() { super(); }
 

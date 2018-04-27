@@ -2,30 +2,30 @@
     ::foreach elements::
     ::if (type == "SymbolInstance")::
     <DOMSymbolInstance libraryItemName="::libraryItemName::">
-        $$setStandard(::self::)
+        $$setProperties(::self::)
     </DOMSymbolInstance>
     ::elseif (type=="Shape")::
     <DOMShape>
-        $$setStandard(::self::)
+        $$setProperties(::self::)
+        ::if (fill!=null)::
         <fills>
-            ::foreach fills::
-            <FillStyle index="::index::">
-                <SolidColor color="::color::"/>
+            <FillStyle index="0">
+                $$setShapes(::self::)
             </FillStyle>
-            ::end::
         </fills>
+        ::end::
         <edges>
-            ::foreach edges::
-            <Edge fillStyle1="::fillStyle::" edges="::edges::"/>
-            ::end::
+            <!--<Edge fillStyle1="::fillStyle::" edges="::edges::"/>-->
         </edges>
     </DOMShape>
     ::elseif (type=="Rectangle")::
     <DOMRectangleObject objectWidth="::width::" objectHeight="::height::" lockFlag="true"::if (radius != null):: topLeftRadius="::radius::" topRightRadius="::radius::" bottomLeftRadius="::radius::" bottomRightRadius="::radius::"::end::>
-        $$setStandard(::self::)
+        $$setProperties(::self::)
+        ::if (fill!=null)::
         <fill>
-            <SolidColor color="::fill::"/>
+            $$setShapes(::self::)
         </fill>
+        ::end::
     </DOMRectangleObject>
     ::end::
     ::end::

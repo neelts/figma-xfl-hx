@@ -171,10 +171,10 @@ class SVGData extends SVGGroup {
 
 		var s:String = getStyle(inKey, inNode, inStyles, "");
 
-		if (s == "") return defaultFill;
+		if (s == "") return null;
 		if (s.charAt(0) == '#') return FillType.FillSolid(parseHex(s.substr(1)));
 		if (mRGBMatch.match(s)) return FillType.FillSolid(parseRGBMatch(mRGBMatch));
-		if (s == "none") return FillType.FillNone;
+		if (s == "none") return null;
 
 		if (mURLMatch.match(s)) {
 			var url = mURLMatch.matched(1);
@@ -183,7 +183,7 @@ class SVGData extends SVGGroup {
 		}
 	
 		throw("Unknown fill string:" + s);
-		return FillType.FillNone;
+		return null;
 	}
 
 
@@ -294,17 +294,15 @@ class SVGData extends SVGGroup {
 			}
 		}
 
-		if (inGrad.exists("x1")) {
-			grad.x1 = getFloat(inGrad, "x1");
-			grad.y1 = getFloat(inGrad, "y1");
-			grad.x2 = getFloat(inGrad, "x2");
-			grad.y2 = getFloat(inGrad, "y2");
-		} else {
-			grad.x1 = getFloat(inGrad, "cx");
-			grad.y1 = getFloat(inGrad, "cy");
-			grad.x2 = getFloat(inGrad, "fx", grad.x1);
-			grad.y2 = getFloat(inGrad, "fy", grad.y1);
-		}
+		if (inGrad.exists("x1")) grad.x1 = getFloat(inGrad, "x1");
+		if (inGrad.exists("x2")) grad.x2 = getFloat(inGrad, "x2");
+		if (inGrad.exists("y1")) grad.y1 = getFloat(inGrad, "y1");
+		if (inGrad.exists("y2")) grad.y2 = getFloat(inGrad, "y2");
+
+		if (inGrad.exists("cx")) grad.x1 = getFloat(inGrad, "cx");
+		if (inGrad.exists("cy")) grad.y1 = getFloat(inGrad, "cy");
+		if (inGrad.exists("fx")) grad.x2 = getFloat(inGrad, "fx", grad.x1);
+		if (inGrad.exists("fy")) grad.y2 = getFloat(inGrad, "fy", grad.y1);
 
 		grad.radius = getFloat(inGrad, "r");
 
@@ -354,11 +352,20 @@ class SVGData extends SVGGroup {
 			var name = el.nodeName;
 			if (name.substr(0, 4) == "svg:") name = name.substr(4);
 
-			if (el.exists("display") && el.get("display") == "none") continue;
-
 			if (name == "defs") {
 				loadDefs(el);
-			} else if (name == "g") {
+				break;
+			}
+		}
+
+		for (el in inG.elements()) {
+
+			var name = el.nodeName;
+			if (name.substr(0, 4) == "svg:") name = name.substr(4);
+
+			if (el.exists("display") && el.get("display") == "none") continue;
+
+			if (name == "g") {
 				if (!(el.exists("display") && el.get("display") == "none")) {
 					g.children.push(DisplayGroup(loadGroup(new SVGGroup (), el, matrix, styles)));
 				}
@@ -400,7 +407,7 @@ class SVGData extends SVGGroup {
 		return rect;
 	}
 
-	private function fillShape(inPath:Xml, matrix:Matrix, styles:StringMap<String>, shape:Shape):Void {
+	private function fillShape(inPath:Xml, matrix:Matrix, styles:StringMap<String>, shape:ShapeBase):Void {
 
 		if (inPath.exists("transform")) {
 			matrix = matrix.clone();

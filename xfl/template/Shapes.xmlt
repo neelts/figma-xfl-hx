@@ -1,0 +1,19 @@
+::if (fill != null)::
+::if (fill.type == "SOLID")::
+<SolidColor color="::fill.color::" alpha="::fill.alpha::" />
+::elseif (fill.type == "GRADIENT_LINEAR")::
+<LinearGradient>
+    $$setProperties(::fill::)
+    ::foreach fill.entries::
+    <GradientEntry color="::color::" alpha="::alpha::" ratio="::ratio::"/>
+    ::end::
+</LinearGradient>
+::elseif (fill.type == "GRADIENT_RADIAL")::
+<RadialGradient>
+    $$setProperties(::fill::)
+    ::foreach fill.entries::
+    <GradientEntry color="::color::" alpha="::alpha::" ratio="::ratio::"/>
+    ::end::
+</RadialGradient>
+::end::
+::end::

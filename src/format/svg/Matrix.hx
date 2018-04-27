@@ -78,4 +78,8 @@ class Matrix {
 	public function clone():Matrix {
 		return new Matrix(a, b, c, d, tx, ty);
 	}
+
+	public function pure():Bool {
+		return a == 1 && b == 0 && c == 0 && d == 1 && tx == 0 && ty == 0;
+	}
 }

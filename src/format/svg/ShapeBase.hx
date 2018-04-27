@@ -1,5 +1,5 @@
 package format.svg;
-class Shape {
+class ShapeBase {
 	public function new() { }
 
 	public var matrix:Matrix;

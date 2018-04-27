@@ -1,14 +1,22 @@
 package ;
-import format.svg.RectShape;
-import String;
-import format.svg.SVGGroup;
+import figma.FigmaAPI.NodeType;
+import figma.FigmaAPI.NodeType;
+import format.svg.GradientType;
+import Array;
 import figma.FigmaAPI;
+import format.svg.FillType;
+import format.svg.Grad;
 import format.svg.Matrix;
+import format.svg.RectShape;
+import format.svg.ShapeBase;
 import format.svg.SVGData;
+import format.svg.SVGGroup;
 import haxe.Http;
+import haxe.Json;
 import haxe.MainLoop;
 import haxe.Template;
 import neko.vm.Thread;
+import String;
 import sys.io.File;
 
 using FigmaXFLGenerate;
@@ -25,6 +33,7 @@ class FigmaXFLGenerate {
 		var figmaAPI:FigmaAPI = new FigmaAPI("token".load());
 		var fileKey:String = "file".load();
 		figmaAPI.files(fileKey, function(r:Response<Document>) {
+			'figma.json'.save(Json.stringify(r.data));
 			new FigmaXFLGenerate().execute(figmaAPI, fileKey, r.data, "xfl");
 		});
 
@@ -151,8 +160,6 @@ class FigmaXFLGenerate {
 
 		parse(content);
 
-		trace(timelines);
-
 		'$xflPath/DOMDocument.xml'.save(
 			new Template('$xflRoot/template/DOMDocument.xmlt'.load()).execute(this, this).pretty()
 		);
@@ -186,7 +193,7 @@ class FigmaXFLGenerate {
 						if (frameNode.name == MAIN) setMain(cast frameNode);
 						var frame:Frame = { elements:[] };
 						var layer:Layer = { frames:[frame], name:frameNode.name };
-						getElements(frame, frameNode.children);
+						getElements(frame, frameNode.children, frameNode);
 						timeline.layers.push(layer);
 					} else {
 						trace("Error! Unframed elements not allowed!");
@@ -197,18 +204,18 @@ class FigmaXFLGenerate {
 		}
 	}
 
-	private function getElements(frame:Frame, children:Array<Node>):Void {
-		for (node in children) getElement(frame, node);
+	private function getElements(frame:Frame, children:Array<Node>, parent:FrameNode):Void {
+		for (node in children) getElement(frame, node, parent);
 	}
 
-	private function getElement(frame:Frame, node:Node):Void {
+	private function getElement(frame:Frame, node:Node, parent:FrameNode = null):Void {
 		var element:Element = switch (node.type) {
 			case NodeType.Component, NodeType.Instance: {
 				checkSymbol(cast node);
 				var symbolElement:SymbolElement = { type:ElementType.SymbolInstance, libraryItemName:node.name };
 				symbolElement;
 			}
-			case NodeType.Rectangle: getRectangle(cast node);
+			case NodeType.Rectangle: getRectangle(cast node, parent);
 			default: null;
 		}
 		if (element != null) {
@@ -226,14 +233,45 @@ class FigmaXFLGenerate {
 		}
 	}
 
-	private function getRectangle(rect:RectangleNode):RectangleElement {
+	private function getRectangle(rect:RectangleNode, parent:FrameNode):RectangleElement {
 		var r:RectShape = images.get(rect.id).getElement(DisplayElement.DisplayRect(null));
-		trace(r.matrix);
 		var re:RectangleElement = copy(r);
-		if (rect.cornerRadius != null) re.radius = rect.cornerRadius;
-		if (rect.fills.isNotEmpty()) re.fill = rect.fills[0].color.hexColor();
 		re.type = ElementType.Rectangle;
+		if (rect.cornerRadius != null) re.radius = rect.cornerRadius;
+		fillShape(re, r);
+		fillMatrix(re, r, rect, parent);
 		return re;
+	}
+
+	private function fillShape(s:ShapeElement, sb:ShapeBase):Void {
+		#if idea
+		var grad:Grad;
+		var color:Int;
+		#end
+		if (sb.fill != null) {
+			s.fill = switch (sb.fill) {
+				case FillType.FillSolid(color): { type:PaintType.Solid, color:'#${color.hex(6)}', alpha:sb.alpha };
+				case FillType.FillGrad(grad): {
+					trace(">>> " + grad);
+					grad.updateMatrix(new Matrix());
+					trace("<<< " + grad.matrix);
+					var fill:ShapeFill = {
+						type:grad.type == GradientType.LINEAR ? PaintType.GradientLinear : PaintType.GradientRadial,
+						entries:[], matrix:grad.matrix
+					};
+					for (i in 0...grad.ratios.length) {
+						fill.entries.push({ ratio:range(grad.ratios[i] / 255), color:'#${grad.colors[i].hex(6)}', alpha:grad.alphas[i] });
+					}
+					fill;
+				};
+			}
+		}
+	}
+
+	private function fillMatrix(s:Element, sb:ShapeBase, v:VectorNode, parent:FrameNode):Void {
+		s.matrix = !sb.matrix.pure() ? sb.matrix : (
+			(parent != null && parent.type == NodeType.Frame) ? new Matrix(1, 0, 0, 1, v.absoluteBoundingBox.x, v.absoluteBoundingBox.y) : null
+		);
 	}
 
 	private function copy<A, B>(a:A):B {
@@ -244,13 +282,6 @@ class FigmaXFLGenerate {
 
 	private function fillElement(e:Element):Void {
 		e.self = e;
-	}
-
-	private function getFills(fills:Array<Paint>):Array<ShapeFill> {
-		var shapeFills:Array<ShapeFill> = [];
-		var index:Int = 0;
-		for (paint in fills) shapeFills.push({ index:index++, color:paint.color.hexColor() });
-		return shapeFills;
 	}
 
 	private function checkSymbol(node:FrameNode):Symbol {
@@ -270,8 +301,6 @@ class FigmaXFLGenerate {
 			item.layers.push(layer);
 		}
 
-		trace(item);
-
 		'$libraryPath/${symbol.href}.xml'.save(
 			new Template('$xflRoot/template/LIBRARY/Item.xmlt'.load()).execute(item, this).pretty()
 		);
@@ -282,9 +311,12 @@ class FigmaXFLGenerate {
 		return new Template('$xflRoot/template/Elements.xmlt'.load()).execute({ elements:elements }, this).pretty();
 	}
 
-	public function setStandard(resolve:String -> Dynamic, self:Element):String {
-		trace(self);
-		return new Template('$xflRoot/template/Standard.xmlt'.load()).execute(self, this).pretty();
+	public function setProperties(resolve:String -> Dynamic, self:Element):String {
+		return new Template('$xflRoot/template/Properties.xmlt'.load()).execute(self, this).pretty();
+	}
+
+	public function setShapes(resolve:String -> Dynamic, self:ShapeElement):String {
+		return new Template('$xflRoot/template/Shapes.xmlt'.load()).execute(self, this).pretty();
 	}
 
 	public function setMain(frame:FrameNode):Void {
@@ -326,6 +358,10 @@ class FigmaXFLGenerate {
 
 	public static inline function f2h(float:Float, base:Int = 255):String {
 		return Std.int(float * base).hex();
+	}
+
+	public static inline function range(float:Float, max:Float = 1, min:Float = 0):Float {
+		return float > max ? max : (float < min ? min : float);
 	}
 
 	public static inline function toMap<V>(object:Dynamic):NMap<V> {
@@ -427,25 +463,35 @@ typedef SymbolElement = { > Element,
 }
 
 typedef ShapeElement = { > Element,
-	var fills:Array<ShapeFill>;
-	var edges:Array<ShapeEdge>;
+	var fill:ShapeFill;
+	var edge:ShapeEdge;
 }
 
-typedef ShapeFill = {
-
+typedef ShapeFill = { > ShapeColor,
+	var type:PaintType;
+	@:optional var matrix:Matrix;
+	@:optional var entries:Array<ShapeGradientEntry>;
 }
 
 typedef ShapeEdge = {
 
 }
 
-typedef RectangleElement = { > Element,
+typedef ShapeGradientEntry = { > ShapeColor,
+	var ratio:Float;
+}
+
+typedef ShapeColor = {
+	@:optional var color:String;
+	@:optional var alpha:Float;
+}
+
+typedef RectangleElement = { > ShapeElement,
 	var width:Float;
 	var height:Float;
 	@:optional var x:Float;
 	@:optional var y:Float;
 	@:optional var radius:Float;
-	@:optional var fill:String;
 }
 
 @:enum abstract ElementType(String) {
