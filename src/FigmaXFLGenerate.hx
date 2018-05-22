@@ -1,11 +1,10 @@
 package ;
-import figma.FigmaAPI.NodeType;
-import figma.FigmaAPI.NodeType;
-import format.svg.GradientType;
+import format.svg.Grad;
 import Array;
+import figma.FigmaAPI.NodeType;
 import figma.FigmaAPI;
 import format.svg.FillType;
-import format.svg.Grad;
+import format.svg.GradientType;
 import format.svg.Matrix;
 import format.svg.RectShape;
 import format.svg.ShapeBase;
@@ -30,9 +29,11 @@ class FigmaXFLGenerate {
 
 	public static function main():Void {
 
+		trace(">>>");
+		
 		var figmaAPI:FigmaAPI = new FigmaAPI("token".load());
 		var fileKey:String = "file".load();
-		figmaAPI.files(fileKey, function(r:Response<Document>) {
+		figmaAPI.files(fileKey, { geometry:FilesGeometry.PATHS }, function(r:Response<Document>) {
 			'figma.json'.save(Json.stringify(r.data));
 			new FigmaXFLGenerate().execute(figmaAPI, fileKey, r.data, "xfl");
 		});
@@ -81,7 +82,9 @@ class FigmaXFLGenerate {
 
 		initExport();
 
-		getImagesList.delay(1000);
+		//getImagesList.delay(1000);
+		trace(">>> beginParsing");
+		beginParsing();
 	}
 
 	private function initExport():Void {
@@ -234,13 +237,33 @@ class FigmaXFLGenerate {
 	}
 
 	private function getRectangle(rect:RectangleNode, parent:FrameNode):RectangleElement {
-		var r:RectShape = images.get(rect.id).getElement(DisplayElement.DisplayRect(null));
-		var re:RectangleElement = copy(r);
-		re.type = ElementType.Rectangle;
+		var re:RectangleElement = { type:ElementType.Rectangle, width:rect.size.x, height:rect.size.y };
 		if (rect.cornerRadius != null) re.radius = rect.cornerRadius;
-		fillShape(re, r);
-		fillMatrix(re, r, rect, parent);
+		fillShape2(re, rect);
+		//fillMatrix(re, r, rect, parent);
 		return re;
+	}
+
+	/*private function getVector(vectorNode:VectorNode, parent:FrameNode):ShapeElement {
+		var se:ShapeElement = vectorNode;
+		return se;
+	}*/
+
+	private function fillShape2(s:ShapeElement, v:VectorNode):Void {
+		if (v.fills.isNotEmpty()) {
+			var p:Paint = v.fills.first();
+			s.fill = switch (p.type) {
+				case PaintType.Solid: { type:p.type, color:p.color.hexColor(), alpha:p.opacity };
+				case PaintType.GradientLinear, PaintType.GradientRadial:
+					var fill:ShapeFill = { type:p.type, entries:[], matrix:new Matrix() };
+					fill.matrix.createGradientBox();
+					for (i in 0...p.gradientStops.length) {
+						
+					}
+					fill;
+				default: null;
+			}
+		}
 	}
 
 	private function fillShape(s:ShapeElement, sb:ShapeBase):Void {
@@ -369,6 +392,7 @@ class FigmaXFLGenerate {
 	}
 
 	public static inline function isNotEmpty<T>(array:Array<T>):Bool return array != null && array.length > 0;
+	public static inline function first<T>(array:Array<T>):T return array[0];
 
 	public static inline function fromLast(s:String, c:String):String return s.substr(s.lastIndexOf(c) + 1);
 
@@ -461,8 +485,8 @@ typedef SymbolElement = { > Element,
 }
 
 typedef ShapeElement = { > Element,
-	var fill:ShapeFill;
-	var edge:ShapeEdge;
+	@:optional var fill:ShapeFill;
+	@:optional var edge:ShapeEdge;
 }
 
 typedef ShapeFill = { > ShapeColor,
