@@ -15,26 +15,26 @@ class PathParser {
 
 	static var sCommandArgs:Array<Int>;
 
-	static inline var MOVE = "M".code;
-	static inline var MOVER = "m".code;
-	static inline var LINE = "L".code;
-	static inline var LINER = "l".code;
-	static inline var HLINE = "H".code;
-	static inline var HLINER = "h".code;
-	static inline var VLINE = "V".code;
-	static inline var VLINER = "v".code;
-	static inline var CUBIC = "C".code;
-	static inline var CUBICR = "c".code;
-	static inline var SCUBIC = "S".code;
-	static inline var SCUBICR = "s".code;
-	static inline var QUAD = "Q".code;
-	static inline var QUADR = "q".code;
-	static inline var SQUAD = "T".code;
-	static inline var SQUADR = "t".code;
-	static inline var ARC = "A".code;
-	static inline var ARCR = "a".code;
-	static inline var CLOSE = "Z".code;
-	static inline var CLOSER = "z".code;
+	public static inline var MOVE = "M".code;
+	public static inline var MOVER = "m".code;
+	public static inline var LINE = "L".code;
+	public static inline var LINER = "l".code;
+	public static inline var HLINE = "H".code;
+	public static inline var HLINER = "h".code;
+	public static inline var VLINE = "V".code;
+	public static inline var VLINER = "v".code;
+	public static inline var CUBIC = "C".code;
+	public static inline var CUBICR = "c".code;
+	public static inline var SCUBIC = "S".code;
+	public static inline var SCUBICR = "s".code;
+	public static inline var QUAD = "Q".code;
+	public static inline var QUADR = "q".code;
+	public static inline var SQUAD = "T".code;
+	public static inline var SQUADR = "t".code;
+	public static inline var ARC = "A".code;
+	public static inline var ARCR = "a".code;
+	public static inline var CLOSE = "Z".code;
+	public static inline var CLOSER = "z".code;
 
 	static inline var UNKNOWN = -1;
 	static inline var SEPARATOR = -2;

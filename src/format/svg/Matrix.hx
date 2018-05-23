@@ -82,4 +82,15 @@ class Matrix {
 	public function pure():Bool {
 		return a == 1 && b == 0 && c == 0 && d == 1 && tx == 0 && ty == 0;
 	}
+
+	public function clean():Void {
+		a = cl(a);
+		b = cl(b);
+		c = cl(c);
+		d = cl(d);
+		tx = cl(tx);
+		ty = cl(ty);
+	}
+
+	public static inline function cl(f:Float, e:Float = 1e-10):Float return Math.abs(f) < e ? 0 : f;
 }

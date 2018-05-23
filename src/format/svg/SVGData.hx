@@ -136,6 +136,7 @@ class SVGData extends SVGGroup {
 			var v:Any = switch (e) {
 				case DisplayElement.DisplayPath(path): path;
 				case DisplayElement.DisplayRect(rect): rect;
+				case DisplayElement.DisplayEllipse(ellipse): ellipse;
 				case DisplayElement.DisplayText(text): text;
 				case DisplayElement.DisplayGroup(group): return getElement(type, group);
 			}
@@ -154,6 +155,7 @@ class SVGData extends SVGGroup {
 			switch (e) {
 				case DisplayElement.DisplayPath(path): trace(indent + "Path" + "  " + path.matrix);
 				case DisplayElement.DisplayRect(rect): trace(indent + "Rect" + "  " + rect.matrix);
+				case DisplayElement.DisplayEllipse(ellipse): trace(indent + "Rect" + "  " + ellipse.matrix);
 				case DisplayElement.DisplayText(text): trace(indent + "Text " + text.text);
 				case DisplayElement.DisplayGroup(group): dumpGroup(group, indent + "   ");
 			}
@@ -375,10 +377,8 @@ class SVGData extends SVGGroup {
 				g.children.push(DisplayRect(loadRect(el, matrix, styles)));
 			} else if (name == "polygon") {
 				g.children.push(DisplayPath(loadPath(el, matrix, styles, false, false)));
-			} else if (name == "ellipse") {
-				g.children.push(DisplayPath(loadPath(el, matrix, styles, false, true)));
-			} else if (name == "circle") {
-				g.children.push(DisplayPath(loadPath(el, matrix, styles, false, true, true)));
+			} else if (name == "circle" || name == "ellipse") {
+				g.children.push(DisplayEllipse(loadEllipse(el, matrix, styles)));
 			} else if (name == "text") {
 				g.children.push(DisplayText(loadText(el, matrix, styles)));
 			} else if (name == "linearGradient") {
@@ -405,6 +405,16 @@ class SVGData extends SVGGroup {
 		if (inPath.exists("rx") || inPath.exists("ry")) rect.radius = Math.max(Std.parseFloat(inPath.get("rx")), Std.parseFloat(inPath.get("ry")));
 
 		return rect;
+	}
+
+	public function loadEllipse(inPath:Xml, matrix:Matrix, inStyles:StringMap<String>):EllipseShape {
+		var ellipse:EllipseShape = new EllipseShape();
+
+		ellipse.width = (inPath.exists("cx") ? Std.parseFloat(inPath.get("cx")) : 0.0) * 2;
+		ellipse.height = (inPath.exists("cy") ? Std.parseFloat(inPath.get("cy")) : 0.0) * 2;
+
+		fillShape(inPath, matrix, inStyles, ellipse);
+		return ellipse;
 	}
 
 	private function fillShape(inPath:Xml, matrix:Matrix, styles:StringMap<String>, shape:ShapeBase):Void {

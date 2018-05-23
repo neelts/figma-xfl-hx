@@ -1,12 +1,14 @@
 package ;
-import format.svg.Grad;
+import format.svg.PathParser;
+import Array;
 import Array;
 import figma.FigmaAPI.NodeType;
 import figma.FigmaAPI;
+import format.svg.EllipseShape;
 import format.svg.FillType;
+import format.svg.Grad;
 import format.svg.GradientType;
 import format.svg.Matrix;
-import format.svg.RectShape;
 import format.svg.ShapeBase;
 import format.svg.SVGData;
 import format.svg.SVGGroup;
@@ -29,8 +31,6 @@ class FigmaXFLGenerate {
 
 	public static function main():Void {
 
-		trace(">>>");
-		
 		var figmaAPI:FigmaAPI = new FigmaAPI("token".load());
 		var fileKey:String = "file".load();
 		figmaAPI.files(fileKey, { geometry:FilesGeometry.PATHS }, function(r:Response<Document>) {
@@ -196,7 +196,7 @@ class FigmaXFLGenerate {
 						if (frameNode.name == MAIN) setMain(cast frameNode);
 						var frame:Frame = { elements:[] };
 						var layer:Layer = { frames:[frame], name:frameNode.name };
-						getElements(frame, frameNode.children, frameNode);
+						getElements(frame, frameNode.children);
 						timeline.layers.push(layer);
 					} else {
 						trace("Error! Unframed elements not allowed!");
@@ -207,18 +207,20 @@ class FigmaXFLGenerate {
 		}
 	}
 
-	private function getElements(frame:Frame, children:Array<Node>, parent:FrameNode):Void {
-		for (node in children) getElement(frame, node, parent);
+	private function getElements(frame:Frame, children:Array<Node>):Void {
+		for (node in children) getElement(frame, node);
 	}
 
-	private function getElement(frame:Frame, node:Node, parent:FrameNode = null):Void {
+	private function getElement(frame:Frame, node:Node):Void {
 		var element:Element = switch (node.type) {
 			case NodeType.Component, NodeType.Instance: {
 				checkSymbol(cast node);
 				var symbolElement:SymbolElement = { type:ElementType.SymbolInstance, libraryItemName:node.name };
 				symbolElement;
 			}
-			case NodeType.Rectangle: getRectangle(cast node, parent);
+			case NodeType.Rectangle: getRectangle(cast node);
+			case NodeType.Ellipse: getEllipse(cast node);
+			case NodeType.Vector, NodeType.Boolean, NodeType.RegularPolygon, NodeType.Star, NodeType.Line: getVector(cast node);
 			default: null;
 		}
 		if (element != null) {
@@ -236,12 +238,40 @@ class FigmaXFLGenerate {
 		}
 	}
 
-	private function getRectangle(rect:RectangleNode, parent:FrameNode):RectangleElement {
+	private function getRectangle(rect:RectangleNode):RectangleElement {
 		var re:RectangleElement = { type:ElementType.Rectangle, width:rect.size.x, height:rect.size.y };
 		if (rect.cornerRadius != null) re.radius = rect.cornerRadius;
-		fillShape2(re, rect);
-		//fillMatrix(re, r, rect, parent);
+		fillShape(re, rect);
+		fillMatrix(re, rect);
 		return re;
+	}
+
+	private function getEllipse(ellipse:EllipseNode):EllipseElement {
+		var ee:EllipseElement = { type:ElementType.Ellipse, width:ellipse.size.x, height:ellipse.size.y };
+		fillShape(ee, ellipse);
+		fillMatrix(ee, ellipse);
+		return ee;
+	}
+
+	private function getVector(vector:VectorNode):VectorElement {
+		var ve:VectorElement = { type:ElementType.Shape, edges:[] };
+		for (path in vector.fillGeometry) ve.edges.push(getEdges(path));
+		fillMatrix(ve, vector)
+		return ve;
+	}
+
+	private function getEdges(p:Path):String {
+		var edges:String = "";
+		for (i in 0...p.path.length) {
+			switch (p.path.charAt(i)) {
+				case PathParser.MOVE: edges += CommandType.MoveTo + (i = readFloats(p.path, i + 1, 2));
+			}
+		}
+		return edges;
+	}
+
+	private function readFloats(c:Int = 2):String {
+
 	}
 
 	/*private function getVector(vectorNode:VectorNode, parent:FrameNode):ShapeElement {
@@ -249,50 +279,49 @@ class FigmaXFLGenerate {
 		return se;
 	}*/
 
-	private function fillShape2(s:ShapeElement, v:VectorNode):Void {
+	private function fillShape(s:ShapeElement, v:VectorNode):Void {
 		if (v.fills.isNotEmpty()) {
 			var p:Paint = v.fills.first();
 			s.fill = switch (p.type) {
 				case PaintType.Solid: { type:p.type, color:p.color.hexColor(), alpha:p.opacity };
-				case PaintType.GradientLinear, PaintType.GradientRadial:
-					var fill:ShapeFill = { type:p.type, entries:[], matrix:new Matrix() };
-					fill.matrix.createGradientBox();
-					for (i in 0...p.gradientStops.length) {
-						
+				case PaintType.GradientLinear, PaintType.GradientRadial: {
+
+					var fill:ShapeFill = { type:p.type, entries:[], matrix:new Matrix(0, 0, 0, 0) };
+					var ah:Vector = p.gradientHandlePositions[0];
+					var bh:Vector = p.gradientHandlePositions[1];
+					var w:Float = v.absoluteBoundingBox.width;
+					var h:Float = v.absoluteBoundingBox.height;
+					var dx:Float = ah.x - bh.x;
+					var dy:Float = ah.y - bh.y;
+
+					if (p.type == PaintType.GradientRadial) {
+						var ch:Vector = p.gradientHandlePositions[2];
+						var cx:Float = ah.x - ch.x;
+						var cy:Float = ah.y - ch.y;
+						fill.matrix.createGradientBox(Math.sqrt(cx * cx + cy * cy) * 2 * w, Math.sqrt(dx * dx + dy * dy) * 2 * h);
+						fill.matrix.rotate(Math.atan2(-cy * cy, cx * cx));
+						fill.matrix.tx = ah.x * w;
+						fill.matrix.ty = ah.y * h;
+					} else {
+						fill.matrix.createGradientBox(dx * w, dy * h, Math.atan2(-dy * dy, -dx * dx));
+						fill.matrix.tx = ah.x * w - dx * .5 * w;
+						fill.matrix.ty = ah.y * h - dy * .5 * h;
 					}
+					fill.matrix.clean();
+
+					for (stop in p.gradientStops) fill.entries.push({ ratio:stop.position, color:stop.color.hexColor(), alpha:stop.color.a });
+
 					fill;
+				}
 				default: null;
 			}
 		}
 	}
 
-	private function fillShape(s:ShapeElement, sb:ShapeBase):Void {
-		#if idea
-		var grad:Grad;
-		var color:Int;
-		#end
-		if (sb.fill != null) {
-			s.fill = switch (sb.fill) {
-				case FillType.FillSolid(color): { type:PaintType.Solid, color:'#${color.hex(6)}', alpha:sb.alpha };
-				case FillType.FillGrad(grad): {
-					grad.updateMatrix(new Matrix());
-					var fill:ShapeFill = {
-						type:grad.type == GradientType.LINEAR ? PaintType.GradientLinear : PaintType.GradientRadial,
-						entries:[], matrix:grad.matrix
-					};
-					for (i in 0...grad.ratios.length) {
-						fill.entries.push({ ratio:range(grad.ratios[i] / 255), color:'#${grad.colors[i].hex(6)}', alpha:grad.alphas[i] });
-					}
-					fill;
-				};
-			}
-		}
-	}
-
-	private function fillMatrix(s:Element, sb:ShapeBase, v:VectorNode, parent:FrameNode):Void {
-		s.matrix = !sb.matrix.pure() ? sb.matrix : (
-			(parent != null && parent.type == NodeType.Frame) ? new Matrix(1, 0, 0, 1, v.absoluteBoundingBox.x, v.absoluteBoundingBox.y) : null
-		);
+	private function fillMatrix(s:Element, v:VectorNode):Void {
+		var a:Array<Float> = v.relativeTransform[0];
+		var b:Array<Float> = v.relativeTransform[1];
+		s.matrix = new Matrix(a[0], b[0], a[1], b[1], a[2], b[2]);
 	}
 
 	private function copy<A, B>(a:A):B {
@@ -378,7 +407,7 @@ class FigmaXFLGenerate {
 	}
 
 	public static inline function f2h(float:Float, base:Int = 255):String {
-		return Std.int(float * base).hex();
+		return Std.int(float * base).hex().zeros();
 	}
 
 	public static inline function range(float:Float, max:Float = 1, min:Float = 0):Float {
@@ -391,7 +420,15 @@ class FigmaXFLGenerate {
 		return map;
 	}
 
+	public static inline function zeros(string:String, count:Int = 2):String {
+		while (string.length < count) string = '0' + string;
+		return string;
+	}
+
+	public static inline function cl(f:Float, e:Float = 1e-10):Float return Math.abs(f) < e ? 0 : f;
+
 	public static inline function isNotEmpty<T>(array:Array<T>):Bool return array != null && array.length > 0;
+
 	public static inline function first<T>(array:Array<T>):T return array[0];
 
 	public static inline function fromLast(s:String, c:String):String return s.substr(s.lastIndexOf(c) + 1);
@@ -399,6 +436,18 @@ class FigmaXFLGenerate {
 	public static inline function initDir(path:String):String {
 		if (!path.exists()) path.createDirectory();
 		return path;
+	}
+
+	public static function maximum(array:Array<Float>):Float {
+		var r:Float = array[0];
+		for (i in 1...array.length) if (array[i] > r) r = array[i];
+		return r;
+	}
+
+	public static function minimum(array:Array<Float>):Float {
+		var r:Float = array[0];
+		for (i in 1...array.length) if (array[i] < r) r = array[i];
+		return r;
 	}
 }
 
@@ -516,8 +565,24 @@ typedef RectangleElement = { > ShapeElement,
 	@:optional var radius:Float;
 }
 
+typedef EllipseElement = { > ShapeElement,
+	var width:Float;
+	var height:Float;
+}
+
+typedef VectorElement = { > ShapeElement,
+	var edges:Array<String>;
+}
+
 @:enum abstract ElementType(String) {
 	var SymbolInstance = "SymbolInstance";
 	var Shape = "Shape";
 	var Rectangle = "Rectangle";
+	var Ellipse = "Ellipse";
+}
+
+@:enum abstract CommandType(String) {
+	var MoveTo = "!";
+	var LineTo = "|";
+	var CurveTo = "[";
 }

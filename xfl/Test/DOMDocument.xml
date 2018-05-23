@@ -9,6 +9,17 @@
                          <frames>
                               <DOMFrame index="0" keyMode="9728">
                                    <elements>
+                                        <DOMShape>
+                                             <fills>
+                                                  <FillStyle index="1">
+                                                       <SolidColor color="#FF9900"/>
+                                                  </FillStyle>
+                                             </fills>
+                                             <edges>
+                                                  <Edge fillStyle0="1" edges="!1850 1765|2145 2060!2145 2060|2015 2190!2015 2190|2135 2190!2135 2190|2135 2310!2135 2310|2375 2070!2375 2070|2155 1850!2155 1850|2315 1690!2315 1690|2315 1500!2315 1500|2135 1500!2135 1500|1945 1690!1945 1690|1830 1585!1830 1585|1720
+ 1585!1720 1585|1460 1845!1460 1845|1720 2105!1720 2105|1590 2235!1590 2235|1700 2345!1700 2345|2010 2035!2010 2035|1795 1820!1795 1820|1850 1765"/>
+                                             </edges>
+                                        </DOMShape>
                                         <DOMSymbolInstance libraryItemName="Box" centerPoint3DX="60.05" centerPoint3DY="60.05">
                                              <matrix>
                                                   <Matrix tx="10" ty="10"/>
@@ -17,7 +28,7 @@
                                                   <Point/>
                                              </transformationPoint>
                                         </DOMSymbolInstance>
-                                        <DOMRectangleObject objectWidth="50" objectHeight="50" x="0" y="0" selected="true" lockFlag="true">
+                                        <DOMRectangleObject objectWidth="50" objectHeight="50" x="0" y="0" lockFlag="true">
                                              <matrix>
                                                   <Matrix tx="10" ty="70"/>
                                              </matrix>
@@ -27,7 +38,7 @@
                                              <fill>
                                                   <LinearGradient>
                                                        <matrix>
-                                                            <Matrix a="0" b="0.030517578125" c="-0.030517578125" d="0" tx="25" ty="25"/>
+                                                            <Matrix a="0.008636474609375" b="0.017791748046875" c="-0.0274200439453125" d="0.0132904052734375" tx="25" ty="25"/>
                                                        </matrix>
                                                        <GradientEntry color="#FF0000" ratio="0"/>
                                                        <GradientEntry color="#00FF00" alpha="0.749019607843137" ratio="0.525490196078431"/>
@@ -35,7 +46,7 @@
                                                   </LinearGradient>
                                              </fill>
                                         </DOMRectangleObject>
-                                        <DOMRectangleObject objectWidth="50" objectHeight="50" x="0" y="0" selected="true" lockFlag="true">
+                                        <DOMRectangleObject objectWidth="50" objectHeight="50" x="0" y="0" lockFlag="true">
                                              <matrix>
                                                   <Matrix tx="70" ty="10"/>
                                              </matrix>
@@ -53,6 +64,14 @@
                                                   </RadialGradient>
                                              </fill>
                                         </DOMRectangleObject>
+                                        <DOMOvalObject objectWidth="50" objectHeight="50" x="70" y="10" endAngle="0">
+                                             <matrix>
+                                                  <Matrix tx="60"/>
+                                             </matrix>
+                                             <fill>
+                                                  <SolidColor color="#00FFFF" alpha="0.498039215686275"/>
+                                             </fill>
+                                        </DOMOvalObject>
                                    </elements>
                               </DOMFrame>
                          </frames>

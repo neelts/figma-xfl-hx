@@ -27,6 +27,15 @@
         </fill>
         ::end::
     </DOMRectangleObject>
+    ::elseif (type=="Ellipse")::
+    <DOMOvalObject objectWidth="::width::" objectHeight="::height::" lockFlag="true">
+        $$setProperties(::self::)
+        ::if (fill!=null)::
+        <fill>
+            $$setShapes(::self::)
+        </fill>
+        ::end::
+    </DOMOvalObject>
     ::end::
     ::end::
 </elements>
