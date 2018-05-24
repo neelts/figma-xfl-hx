@@ -1,22 +1,17 @@
 package ;
-import format.svg.PathParser;
-import Array;
 import Array;
 import figma.FigmaAPI.NodeType;
 import figma.FigmaAPI;
-import format.svg.EllipseShape;
-import format.svg.FillType;
-import format.svg.Grad;
-import format.svg.GradientType;
 import format.svg.Matrix;
-import format.svg.ShapeBase;
+import format.svg.PathParser;
+import format.svg.PathSegment;
 import format.svg.SVGData;
-import format.svg.SVGGroup;
 import haxe.Http;
 import haxe.Json;
 import haxe.MainLoop;
 import haxe.Template;
 import neko.vm.Thread;
+import Reflect;
 import String;
 import sys.io.File;
 
@@ -221,7 +216,8 @@ class FigmaXFLGenerate {
 			case NodeType.Rectangle: getRectangle(cast node);
 			case NodeType.Ellipse: getEllipse(cast node);
 			case NodeType.Vector, NodeType.Boolean, NodeType.RegularPolygon, NodeType.Star, NodeType.Line: getVector(cast node);
-			default: null;
+			// TODO: Due to documentation error (Same as NodeType.Boolean = BOOLEAN)
+			default: if (Std.string(node.type) == "BOOLEAN_OPERATION") getVector(cast node) else null;
 		}
 		if (element != null) {
 			fillElement(element);
@@ -255,23 +251,42 @@ class FigmaXFLGenerate {
 
 	private function getVector(vector:VectorNode):VectorElement {
 		var ve:VectorElement = { type:ElementType.Shape, edges:[] };
-		for (path in vector.fillGeometry) ve.edges.push(getEdges(path));
-		fillMatrix(ve, vector)
+		var commands:Array<Array<Command>> = [];
+		for (path in vector.fillGeometry) commands.push(getCommands(path.path));
+		fillShape(ve, vector);
+		fillMatrix(ve, vector);
+		var cubic:Bool = false;
+		for (cs in commands) {
+			var edge:String = "";
+			for (c in cs) {
+				if (!cubic && c.c == CommandType.CurveTo) cubic = true;
+				edge += c.c + c.p.join(" ");
+			}
+			ve.edges.push({ edge:edge });
+		}
+		ve.fillType = cubic ? 0 : 1;
 		return ve;
 	}
 
-	private function getEdges(p:Path):String {
-		var edges:String = "";
-		for (i in 0...p.path.length) {
-			switch (p.path.charAt(i)) {
-				case PathParser.MOVE: edges += CommandType.MoveTo + (i = readFloats(p.path, i + 1, 2));
-			}
+	private function getCommands(path:String):Array<Command> {
+		var commands:Array<Command> = [];
+		var i:Int = 0;
+
+		for (segment in new PathParser().parse(path, true)) {
+			commands.push({
+				c:switch(segment.getType()) {
+					case PathSegment.MOVE: CommandType.MoveTo;
+					case PathSegment.DRAW: CommandType.LineTo;
+					case PathSegment.CURVE: CommandType.CurveTo;
+					default: null;
+				},
+				p:Std.is(segment, QuadraticSegment) ? {
+					var quad:QuadraticSegment = cast segment;
+					[quad.cx.twips(), quad.cy.twips(), quad.x.twips(), quad.y.twips()];
+				} : [segment.x.twips(), segment.y.twips()]
+			});
 		}
-		return edges;
-	}
-
-	private function readFloats(c:Int = 2):String {
-
+		return commands;
 	}
 
 	/*private function getVector(vectorNode:VectorNode, parent:FrameNode):ShapeElement {
@@ -283,7 +298,7 @@ class FigmaXFLGenerate {
 		if (v.fills.isNotEmpty()) {
 			var p:Paint = v.fills.first();
 			s.fill = switch (p.type) {
-				case PaintType.Solid: { type:p.type, color:p.color.hexColor(), alpha:p.opacity };
+				case PaintType.Solid: { type:p.type, color:p.color.hexColor(), alpha:p.opacity != null ? p.opacity : p.color.a };
 				case PaintType.GradientLinear, PaintType.GradientRadial: {
 
 					var fill:ShapeFill = { type:p.type, entries:[], matrix:new Matrix(0, 0, 0, 0) };
@@ -449,6 +464,8 @@ class FigmaXFLGenerate {
 		for (i in 1...array.length) if (array[i] < r) r = array[i];
 		return r;
 	}
+
+	public static inline function twips(f:Float):Int return Math.round(f * 20);
 }
 
 class NMap<V> {
@@ -571,7 +588,17 @@ typedef EllipseElement = { > ShapeElement,
 }
 
 typedef VectorElement = { > ShapeElement,
-	var edges:Array<String>;
+	@:optional var fillType:Int;
+	var edges:Array<Edge>;
+}
+
+typedef Edge = {
+	var edge:String;
+}
+
+typedef Command = {
+	@:optional var c:CommandType;
+	@:optional var p:Array<Int>;
 }
 
 @:enum abstract ElementType(String) {

@@ -9,17 +9,6 @@
                          <frames>
                               <DOMFrame index="0" keyMode="9728">
                                    <elements>
-                                        <DOMShape>
-                                             <fills>
-                                                  <FillStyle index="1">
-                                                       <SolidColor color="#FF9900"/>
-                                                  </FillStyle>
-                                             </fills>
-                                             <edges>
-                                                  <Edge fillStyle0="1" edges="!1850 1765|2145 2060!2145 2060|2015 2190!2015 2190|2135 2190!2135 2190|2135 2310!2135 2310|2375 2070!2375 2070|2155 1850!2155 1850|2315 1690!2315 1690|2315 1500!2315 1500|2135 1500!2135 1500|1945 1690!1945 1690|1830 1585!1830 1585|1720
- 1585!1720 1585|1460 1845!1460 1845|1720 2105!1720 2105|1590 2235!1590 2235|1700 2345!1700 2345|2010 2035!2010 2035|1795 1820!1795 1820|1850 1765"/>
-                                             </edges>
-                                        </DOMShape>
                                         <DOMSymbolInstance libraryItemName="Box" centerPoint3DX="60.05" centerPoint3DY="60.05">
                                              <matrix>
                                                   <Matrix tx="10" ty="10"/>
@@ -72,6 +61,44 @@
                                                   <SolidColor color="#00FFFF" alpha="0.498039215686275"/>
                                              </fill>
                                         </DOMOvalObject>
+                                        <DOMGroup>
+                                             <members>
+                                                  <DOMShape>
+                                                       <fills>
+                                                            <FillStyle index="1">
+                                                                 <SolidColor color="#99CC33"/>
+                                                            </FillStyle>
+                                                       </fills>
+                                                       <edges>
+                                                            <Edge fillStyle1="1" edges="!3410 2350|2791 2350!2791 2350|2600 1763!2600 1763|3101 1400!3101 1400|3600 1763!3600 1763|3410 2350"/>
+                                                       </edges>
+                                                  </DOMShape>
+                                             </members>
+                                        </DOMGroup>
+                                        <DOMShape selected="true" isDrawingObject="true">
+                                             <fills>
+                                                  <FillStyle index="1">
+                                                       <SolidColor color="#006666"/>
+                                                  </FillStyle>
+                                             </fills>
+                                             <edges>
+                                                  <Edge fillStyle1="1" edges="!1390 3060|1610 2840!1610 2840|1810 3040!1810 3040|1690 3160!1690 3160|1870 3340!1870 3340|2050 3160!2050 3160|2180 3290!2180 3290|2280 3190!2280 3190|1980 2890!1980 2890|2100 2770!2100 2770|2510 3180!2510 3180|2170 3520!2170 3520|2020
+ 3370!2020 3370|1820 3570!1820 3570|1640 3390!1640 3390|1500 3530!1500 3530|1390 3415!1390 3415|1390 3060"/>
+                                             </edges>
+                                        </DOMShape>
+                                        <DOMShape isDrawingObject="true">
+                                             <matrix>
+                                                  <Matrix tx="116.5" ty="170.5"/>
+                                             </matrix>
+                                             <fills>
+                                                  <FillStyle index="1">
+                                                       <SolidColor color="#773030" alpha="1"/>
+                                                  </FillStyle>
+                                             </fills>
+                                             <edges>
+                                                  <Edge edges="!0 170|170 0|320 0|380 60|440 0|720 280|510 490|450 430|380 430|450 360|290 200|90 400|20 330|90 260|0 170" fillStyle0="1"/>
+                                             </edges>
+                                        </DOMShape>
                                    </elements>
                               </DOMFrame>
                          </frames>

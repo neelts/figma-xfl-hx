@@ -5,17 +5,19 @@
         $$setProperties(::self::)
     </DOMSymbolInstance>
     ::elseif (type=="Shape")::
-    <DOMShape>
+    <DOMShape isDrawingObject="true">
         $$setProperties(::self::)
         ::if (fill!=null)::
         <fills>
-            <FillStyle index="0">
+            <FillStyle index="1">
                 $$setShapes(::self::)
             </FillStyle>
         </fills>
         ::end::
         <edges>
-            <!--<Edge fillStyle1="::fillStyle::" edges="::edges::"/>-->
+            ::foreach edges::
+            <Edge fillStyle::fillType::="1" edges="::edge::"/>
+            ::end::
         </edges>
     </DOMShape>
     ::elseif (type=="Rectangle")::
