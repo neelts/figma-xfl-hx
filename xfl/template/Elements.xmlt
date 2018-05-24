@@ -1,7 +1,7 @@
 <elements>
     ::foreach elements::
     ::if (type == "SymbolInstance")::
-    <DOMSymbolInstance libraryItemName="::libraryItemName::">
+    <DOMSymbolInstance libraryItemName="::libraryItemName::" ::if (name != null)::name="::name::"::end::>
         $$setProperties(::self::)
     </DOMSymbolInstance>
     ::elseif (type=="Shape")::

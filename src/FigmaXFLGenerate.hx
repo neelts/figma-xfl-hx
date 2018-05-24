@@ -1,4 +1,5 @@
 package ;
+import figma.FigmaAPI.NodeType;
 import Array;
 import figma.FigmaAPI.NodeType;
 import figma.FigmaAPI;
@@ -203,15 +204,33 @@ class FigmaXFLGenerate {
 	}
 
 	private function getElements(frame:Frame, children:Array<Node>):Void {
+		for (node in children) getComponents(node);
 		for (node in children) getElement(frame, node);
 	}
 
+	private function getComponents(node:Node):Void {
+		switch (node.type) {
+			case NodeType.Component: {
+				var component:ComponentNode = cast node;
+				createSymbol(cast node);
+				for (child in component.children) getComponents(child);
+			}
+			case NodeType.Canvas, NodeType.Frame, NodeType.Group: {
+				var frame:FrameNode = cast node;
+				for (child in frame.children) getComponents(child);
+			}
+			default:
+		}
+	}
+
 	private function getElement(frame:Frame, node:Node):Void {
+
 		var element:Element = switch (node.type) {
-			case NodeType.Component, NodeType.Instance: {
-				checkSymbol(cast node);
-				var symbolElement:SymbolElement = { type:ElementType.SymbolInstance, libraryItemName:node.name };
-				symbolElement;
+			case NodeType.Instance: {
+				var instance:InstanceNode = cast node;
+				var symbol:Symbol = symbolsMap.get(instance.componentId);
+				var element:SymbolElement = { name:node.name, type:ElementType.SymbolInstance, libraryItemName:symbol.libraryItemName };
+				element;
 			}
 			case NodeType.Rectangle: getRectangle(cast node);
 			case NodeType.Ellipse: getEllipse(cast node);
@@ -219,6 +238,7 @@ class FigmaXFLGenerate {
 			// TODO: Due to documentation error (Same as NodeType.Boolean = BOOLEAN)
 			default: if (Std.string(node.type) == "BOOLEAN_OPERATION") getVector(cast node) else null;
 		}
+
 		if (element != null) {
 			fillElement(element);
 			switch (node.type) {
@@ -349,26 +369,32 @@ class FigmaXFLGenerate {
 		e.self = e;
 	}
 
-	private function checkSymbol(node:FrameNode):Symbol {
-		return symbolsMap.exists(node.name) ? symbolsMap.get(node.name) : createSymbol(
-			symbols.pushes(symbolsMap.sets(node.name, { type:SymbolType.Include, href:node.name, itemID:guid() })), node
-		);
-	}
+	private function createSymbol(component:ComponentNode):Symbol {
 
-	private function createSymbol(symbol:Symbol, frameNode:FrameNode):Symbol {
+		var packaged:Bool = component.name.indexOf(".") != -1;
+
+		var symbol:Symbol = {
+			libraryItemName:packaged ? component.name.fromLast(".") : component.name, type:SymbolType.Include,
+			href:component.name.fromLast("."), itemID:guid()
+		};
 
 		var item:LibrarySymbol = { name:symbol.href, itemID:symbol.itemID, layers:[] };
+		if (packaged) item.linkageClassName = component.name;
 
-		for (node in frameNode.children) {
+		for (node in component.children) {
 			var frame:Frame = { elements:[] };
-			var layer:Layer = { frames:[frame], name:frameNode.name };
+			var layer:Layer = { frames:[frame], name:symbol.href };
 			getElement(frame, node);
 			item.layers.push(layer);
 		}
 
+		symbolsMap.set(component.id, symbol);
+		symbols.push(symbol);
+
 		'$libraryPath/${symbol.href}.xml'.save(
 			new Template('$xflRoot/template/LIBRARY/Item.xmlt'.load()).execute(item, this).pretty()
 		);
+
 		return symbol;
 	}
 
@@ -510,9 +536,11 @@ typedef LibrarySymbol = {
 	var name:String;
 	var itemID:String;
 	var layers:Array<Layer>;
+	@:optional var linkageClassName:String;
 }
 
 typedef Symbol = {
+	var libraryItemName:String;
 	var type:SymbolType;
 	var href:String;
 	var itemID:String;
@@ -547,6 +575,7 @@ typedef Element = {
 }
 
 typedef SymbolElement = { > Element,
+	var name:String;
 	var libraryItemName:String;
 }
 

@@ -1,6 +1,6 @@
 <DOMDocument xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://ns.adobe.com/xfl/2008/" width="200" height="200" currentTimeline="1" xflVersion="2.2" creatorInfo="Adobe Flash Professional CS6" platform="Windows" versionInfo="Saved by Adobe Flash Windows 12.0 build 537" majorVersion="12" buildNumber="537" viewAngle3D="21.4381852880442" vanishingPoint3DX="100" vanishingPoint3DY="100" playOptionsPlayLoop="false" playOptionsPlayPages="false" playOptionsPlayFrameActions="false" autoSaveHasPrompted="true">
      <symbols>
-          <Include href="Box.xml" loadImmediate="false" itemID="5adc75e0-00000244" lastModified="1524816335"/>
+          <Include href="Box.xml" itemID="5b06b03c-00000080" lastModified="1527164988"/>
      </symbols>
      <timelines>
           <DOMTimeline name="Main">
@@ -75,7 +75,7 @@
                                                   </DOMShape>
                                              </members>
                                         </DOMGroup>
-                                        <DOMShape selected="true" isDrawingObject="true">
+                                        <DOMShape isDrawingObject="true">
                                              <fills>
                                                   <FillStyle index="1">
                                                        <SolidColor color="#006666"/>
@@ -92,13 +92,22 @@
                                              </matrix>
                                              <fills>
                                                   <FillStyle index="1">
-                                                       <SolidColor color="#773030" alpha="1"/>
+                                                       <SolidColor color="#773030"/>
                                                   </FillStyle>
                                              </fills>
                                              <edges>
-                                                  <Edge edges="!0 170|170 0|320 0|380 60|440 0|720 280|510 490|450 430|380 430|450 360|290 200|90 400|20 330|90 260|0 170" fillStyle0="1"/>
+                                                  <Edge fillStyle0="1" edges="
+!720 280|510 490!510 490|450 430!450 430|380 430!380 430|450 360!450 360|290 200!290 200|90 400!90 400|20 330!20 330|90 260!90 260|0 170!0 170|170 0!170 0|320 0!320 0|380 60!380 60|440 0!440 0|720 280"/>
                                              </edges>
                                         </DOMShape>
+                                        <DOMSymbolInstance libraryItemName="Box" name="box" centerPoint3DX="216.05" centerPoint3DY="178.55">
+                                             <matrix>
+                                                  <Matrix tx="166" ty="128.5"/>
+                                             </matrix>
+                                             <transformationPoint>
+                                                  <Point/>
+                                             </transformationPoint>
+                                        </DOMSymbolInstance>
                                    </elements>
                               </DOMFrame>
                          </frames>
