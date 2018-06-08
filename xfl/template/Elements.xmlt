@@ -38,6 +38,18 @@
         </fill>
         ::end::
     </DOMOvalObject>
+    ::elseif (type=="Text")::
+    <DOMDynamicText ::if (name != null)::name="::name::"::end:: fontRenderingMode="standard" width="::width::" height="::height::" isSelectable="false">
+		 $$setProperties(::self::)
+		 <textRuns>
+			  <DOMTextRun>
+				   <characters>::text::</characters>
+				   <textAttrs>
+						<DOMTextAttrs aliasText="false" autoKern="true" alpha="::alpha::" lineSpacing="0" size="::size::" face="::face::" fillColor="::color::"/>
+				   </textAttrs>
+			  </DOMTextRun>
+		 </textRuns>
+	</DOMDynamicText>
     ::end::
     ::end::
 </elements>

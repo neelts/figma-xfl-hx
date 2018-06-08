@@ -1,4 +1,4 @@
-<DOMSymbolItem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://ns.adobe.com/xfl/2008/" name="Box" itemID="5b06b03c-00000080" linkageExportForAS="true" linkageClassName="aw.Box" lastModified="1527164988">
+<DOMComponentItem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://ns.adobe.com/xfl/2008/" name="Box" itemID="5b06b03c-00000080" linkageExportForAS="true" linkageClassName="aw.Box" lastModified="1527167407" displayAsComponent="false" customIconID="0" persistLivePreview11="true" editFrameIndex="1" requiredMinimumPlayerVersion="0" requiredMinimumASVersion="0" parametersAreLocked="true">
   <timeline>
     <DOMTimeline name="Box">
       <layers>
@@ -21,4 +21,8 @@
       </layers>
     </DOMTimeline>
   </timeline>
-</DOMSymbolItem>
+  <parametersAsXML><![CDATA[   <property id="12">
+      <Inspectable name="test" variable="12" category="" verbose="0" defaultValue="0" type="Number"/>
+   </property>
+]]></parametersAsXML>
+</DOMComponentItem>

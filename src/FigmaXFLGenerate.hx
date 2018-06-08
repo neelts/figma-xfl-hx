@@ -1,5 +1,4 @@
 package ;
-import figma.FigmaAPI.NodeType;
 import Array;
 import figma.FigmaAPI.NodeType;
 import figma.FigmaAPI;
@@ -226,14 +225,10 @@ class FigmaXFLGenerate {
 	private function getElement(frame:Frame, node:Node):Void {
 
 		var element:Element = switch (node.type) {
-			case NodeType.Instance: {
-				var instance:InstanceNode = cast node;
-				var symbol:Symbol = symbolsMap.get(instance.componentId);
-				var element:SymbolElement = { name:node.name, type:ElementType.SymbolInstance, libraryItemName:symbol.libraryItemName };
-				element;
-			}
+			case NodeType.Instance: getInstance(cast node);
 			case NodeType.Rectangle: getRectangle(cast node);
 			case NodeType.Ellipse: getEllipse(cast node);
+			case NodeType.Text: getText(cast node);
 			case NodeType.Vector, NodeType.Boolean, NodeType.RegularPolygon, NodeType.Star, NodeType.Line: getVector(cast node);
 			// TODO: Due to documentation error (Same as NodeType.Boolean = BOOLEAN)
 			default: if (Std.string(node.type) == "BOOLEAN_OPERATION") getVector(cast node) else null;
@@ -241,17 +236,15 @@ class FigmaXFLGenerate {
 
 		if (element != null) {
 			fillElement(element);
-			switch (node.type) {
-				case NodeType.Component, NodeType.Instance, NodeType.Vector: {
-					var vectorNode:FrameNode = cast node;
-					if (vectorNode.absoluteBoundingBox.x != 0 || vectorNode.absoluteBoundingBox.y != 0) {
-						element.matrix = new Matrix(1, 0, 0, 1, vectorNode.absoluteBoundingBox.x, vectorNode.absoluteBoundingBox.y);
-					}
-				}
-				default:
-			}
 			frame.elements.push(element);
 		}
+	}
+
+	private function getInstance(instance:InstanceNode):SymbolElement {
+		var symbol:Symbol = symbolsMap.get(instance.componentId);
+		var se:SymbolElement = { name:instance.name, type:ElementType.SymbolInstance, libraryItemName:symbol.libraryItemName };
+		fillMatrix(se, instance);
+		return se;
 	}
 
 	private function getRectangle(rect:RectangleNode):RectangleElement {
@@ -267,6 +260,18 @@ class FigmaXFLGenerate {
 		fillShape(ee, ellipse);
 		fillMatrix(ee, ellipse);
 		return ee;
+	}
+
+	private function getText(text:TextNode):TextElement {
+		var st:TypeStyle = text.style;
+		var cl:Paint = text.fills.first();
+		var n:String = text.name.charAt(0) == text.name.charAt(0).toLowerCase() ? text.name : null;
+		var te:TextElement = {
+			type:ElementType.Text, width:text.size.x, height:text.size.y, name:text.name, text:text.characters,
+			size: st.fontSize, face: st.fontPostScriptName, color:cl.color.hexColor(), alpha:cl.opacity
+		};
+		fillMatrix(te, text);
+		return te;
 	}
 
 	private function getVector(vector:VectorNode):VectorElement {
@@ -353,9 +358,9 @@ class FigmaXFLGenerate {
 		}
 	}
 
-	private function fillMatrix(s:Element, v:VectorNode):Void {
-		var a:Array<Float> = v.relativeTransform[0];
-		var b:Array<Float> = v.relativeTransform[1];
+	private function fillMatrix(s:Element, t:RelativeTransform):Void {
+		var a:Array<Float> = t.relativeTransform[0];
+		var b:Array<Float> = t.relativeTransform[1];
 		s.matrix = new Matrix(a[0], b[0], a[1], b[1], a[2], b[2]);
 	}
 
@@ -383,9 +388,9 @@ class FigmaXFLGenerate {
 
 		for (node in component.children) {
 			var frame:Frame = { elements:[] };
-			var layer:Layer = { frames:[frame], name:symbol.href };
+			var layer:Layer = { frames:[frame], name:node.name };
 			getElement(frame, node);
-			item.layers.push(layer);
+			item.layers.unshift(layer);
 		}
 
 		symbolsMap.set(component.id, symbol);
@@ -440,7 +445,7 @@ class FigmaXFLGenerate {
 	}
 
 	public static inline function pretty(xml:String):String {
-		return ~/>\s*</g.replace(xml, "><").parse().print(true);
+		return ~/>\s*</g.replace(xml, "><").parse().print(false);
 	}
 
 	public static inline function hexColor(c:Color):String {
@@ -616,6 +621,17 @@ typedef EllipseElement = { > ShapeElement,
 	var height:Float;
 }
 
+typedef TextElement = { > Element,
+	var name:String;
+	var width:Float;
+	var height:Float;
+	var color:String;
+	var alpha:Float;
+	var size:Float;
+	var face:String;
+	var text:String;
+}
+
 typedef VectorElement = { > ShapeElement,
 	@:optional var fillType:Int;
 	var edges:Array<Edge>;
@@ -630,11 +646,16 @@ typedef Command = {
 	@:optional var p:Array<Int>;
 }
 
+typedef RelativeTransform = {
+	var relativeTransform:Array<Array<Float>>;
+}
+
 @:enum abstract ElementType(String) {
 	var SymbolInstance = "SymbolInstance";
 	var Shape = "Shape";
 	var Rectangle = "Rectangle";
 	var Ellipse = "Ellipse";
+	var Text = "Text";
 }
 
 @:enum abstract CommandType(String) {
