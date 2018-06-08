@@ -67,6 +67,7 @@ class FigmaXFLGenerate {
 	public var timelines:Array<Timeline>;
 
 	private var symbolsMap:Map<String, Symbol>;
+	private var componentsMap:Map<String, ComponentNode>;
 
 	public function execute(figmaAPI:FigmaAPI, fileKey:String, content:Document, xflRoot:String) {
 
@@ -177,6 +178,7 @@ class FigmaXFLGenerate {
 	private function parse(content:Document):Void {
 
 		symbolsMap = new Map<String, Symbol>();
+		componentsMap = new Map<String, ComponentNode>();
 
 		symbols = [];
 		timelines = [];
@@ -185,13 +187,14 @@ class FigmaXFLGenerate {
 			if (node.type == NodeType.Canvas) {
 				var canvas:CanvasNode = cast node;
 				var timeline:Timeline = { layers:[], name:canvas.name };
+				for (node in canvas.children) if (node.type == NodeType.Frame) registerComponents(cast node);
 				for (node in canvas.children) {
 					if (node.type == NodeType.Frame) {
 						var frameNode:FrameNode = cast node;
 						if (frameNode.name == MAIN) setMain(cast frameNode);
 						var frame:Frame = { elements:[] };
 						var layer:Layer = { frames:[frame], name:frameNode.name };
-						getElements(frame, frameNode.children);
+						for (child in frameNode.children) getElement(frame, child);
 						timeline.layers.push(layer);
 					} else {
 						trace("Error! Unframed elements not allowed!");
@@ -202,23 +205,18 @@ class FigmaXFLGenerate {
 		}
 	}
 
-	private function getElements(frame:Frame, children:Array<Node>):Void {
-		for (node in children) getComponents(node);
-		for (node in children) getElement(frame, node);
-	}
-
-	private function getComponents(node:Node):Void {
-		switch (node.type) {
-			case NodeType.Component: {
-				var component:ComponentNode = cast node;
-				createSymbol(cast node);
-				for (child in component.children) getComponents(child);
+	private function registerComponents(frame:FrameNode):Void {
+		if (frame.children != null) {
+			for (node in frame.children) {
+				switch (node.type) {
+					case NodeType.Component, NodeType.Canvas, NodeType.Frame, NodeType.Group: {
+						var frame:FrameNode = cast node;
+						for (child in frame.children) registerComponents(cast child);
+						if (node.type == NodeType.Component) componentsMap.set(node.id, cast node);
+					}
+					default:
+				}
 			}
-			case NodeType.Canvas, NodeType.Frame, NodeType.Group: {
-				var frame:FrameNode = cast node;
-				for (child in frame.children) getComponents(child);
-			}
-			default:
 		}
 	}
 
@@ -242,8 +240,11 @@ class FigmaXFLGenerate {
 
 	private function getInstance(instance:InstanceNode):SymbolElement {
 		var symbol:Symbol = symbolsMap.get(instance.componentId);
+		var component:ComponentNode = componentsMap.get(instance.componentId);
+		if (symbol == null) symbol = createSymbol(component);
 		var se:SymbolElement = { name:instance.name, type:ElementType.SymbolInstance, libraryItemName:symbol.libraryItemName };
 		fillMatrix(se, instance);
+		if (symbol.scaleGrid) se.matrix.scales(instance.size.x / component.size.x, instance.size.y / component.size.y);
 		return se;
 	}
 
@@ -268,7 +269,8 @@ class FigmaXFLGenerate {
 		var n:String = text.name.charAt(0) == text.name.charAt(0).toLowerCase() ? text.name : null;
 		var te:TextElement = {
 			type:ElementType.Text, width:text.size.x, height:text.size.y, name:text.name, text:text.characters,
-			size: st.fontSize, face: st.fontPostScriptName, color:cl.color.hexColor(), alpha:cl.opacity
+			size: st.fontSize, face: st.fontPostScriptName, color:cl.color.hexColor(), alpha:cl.opacity,
+			align:Std.string(st.textAlignHorizontal).toLowerCase()
 		};
 		fillMatrix(te, text);
 		return te;
@@ -380,13 +382,22 @@ class FigmaXFLGenerate {
 
 		var symbol:Symbol = {
 			libraryItemName:packaged ? component.name.fromLast(".") : component.name, type:SymbolType.Include,
-			href:component.name.fromLast("."), itemID:guid()
+			href:component.name.fromLast("."), itemID:guid(), scaleGrid:false
 		};
 
 		var item:LibrarySymbol = { name:symbol.href, itemID:symbol.itemID, layers:[] };
 		if (packaged) item.linkageClassName = component.name;
 
 		for (node in component.children) {
+			if (node.name == "ScaleGrid") {
+				var rect:RectangleNode = cast node;
+				item.scaleGrid = symbol.scaleGrid = true;
+				item.scaleGridLeft = rect.relativeTransform.tx();
+				item.scaleGridTop = rect.relativeTransform.ty();
+				item.scaleGridRight = item.scaleGridLeft + rect.size.x;
+				item.scaleGridBottom = item.scaleGridTop + rect.size.y;
+				continue;
+			}
 			var frame:Frame = { elements:[] };
 			var layer:Layer = { frames:[frame], name:node.name };
 			getElement(frame, node);
@@ -496,6 +507,10 @@ class FigmaXFLGenerate {
 		return r;
 	}
 
+	public static inline function tx(rt:Array<Array<Float>>):Float return rt[0][2];
+
+	public static inline function ty(rt:Array<Array<Float>>):Float return rt[1][2];
+
 	public static inline function twips(f:Float):Int return Math.round(f * 20);
 }
 
@@ -542,6 +557,11 @@ typedef LibrarySymbol = {
 	var itemID:String;
 	var layers:Array<Layer>;
 	@:optional var linkageClassName:String;
+	@:optional var scaleGrid:Bool;
+	@:optional var scaleGridLeft:Float;
+	@:optional var scaleGridRight:Float;
+	@:optional var scaleGridTop:Float;
+	@:optional var scaleGridBottom:Float;
 }
 
 typedef Symbol = {
@@ -549,6 +569,7 @@ typedef Symbol = {
 	var type:SymbolType;
 	var href:String;
 	var itemID:String;
+	var scaleGrid:Bool;
 }
 
 @:enum abstract SymbolType(String) {
@@ -630,6 +651,7 @@ typedef TextElement = { > Element,
 	var size:Float;
 	var face:String;
 	var text:String;
+	var align:String;
 }
 
 typedef VectorElement = { > ShapeElement,

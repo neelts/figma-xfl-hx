@@ -1,6 +1,7 @@
 <DOMDocument xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://ns.adobe.com/xfl/2008/" width="300" height="300" currentTimeline="1" xflVersion="2.2" creatorInfo="Adobe Flash Professional CS6" platform="Windows" versionInfo="Saved by Adobe Flash Windows 12.0 build 537" majorVersion="12" buildNumber="537" viewAngle3D="31.7033311465607" vanishingPoint3DX="100" vanishingPoint3DY="100" playOptionsPlayLoop="false" playOptionsPlayPages="false" playOptionsPlayFrameActions="false" autoSaveHasPrompted="true">
      <symbols>
-          <Include href="Box.xml" itemID="5b06b03c-00000080" lastModified="1527167407"/>
+          <Include href="Box.xml" itemID="5b06b03c-00000080" lastModified="1528467132"/>
+          <Include href="BoxScale.xml" loadImmediate="false" itemID="5b1a6cfc-0000068a" lastModified="1528458511"/>
      </symbols>
      <timelines>
           <DOMTimeline name="Main">
@@ -107,18 +108,7 @@
 !720 280|510 490!510 490|450 430!450 430|380 430!380 430|450 360!450 360|290 200!290 200|90 400!90 400|20 330!20 330|90 260!90 260|0 170!0 170|170 0!170 0|320 0!320 0|380 60!380 60|440 0!440 0|720 280"/>
                                              </edges>
                                         </DOMShape>
-                                        <DOMComponentInstance libraryItemName="Box" name="box" centerPoint3DX="216.05" centerPoint3DY="178.55" uniqueID="2">
-                                             <matrix>
-                                                  <Matrix tx="166" ty="128.5"/>
-                                             </matrix>
-                                             <transformationPoint>
-                                                  <Point/>
-                                             </transformationPoint>
-                                             <dataBindingXML><![CDATA[<component metaDataFetched='true' schemaUrl='' schemaOperation='' sceneRootLabel='Main' oldCopiedComponentPath='2'>
-</component>
-]]></dataBindingXML>
-                                        </DOMComponentInstance>
-                                        <DOMDynamicText name="testLabel" selected="true" fontRenderingMode="standard" width="106" height="16.95" isSelectable="false">
+                                        <DOMDynamicText name="testLabel" fontRenderingMode="standard" width="106" height="16.95" isSelectable="false" lineType="multiline">
                                              <matrix>
                                                   <Matrix tx="12" ty="197"/>
                                              </matrix>
@@ -126,11 +116,45 @@
                                                   <DOMTextRun>
                                                        <characters>Some text...</characters>
                                                        <textAttrs>
-                                                            <DOMTextAttrs aliasText="false" autoKern="false" alpha="0.498039215686275" lineSpacing="0" size="14" bitmapSize="280" face="CoreSansD55Bold" fillColor="#278F57"/>
+                                                            <DOMTextAttrs alignment="right" aliasText="false" autoKern="false" alpha="0.498039215686275" lineSpacing="0" size="14" bitmapSize="280" face="CoreSansD55Bold" fillColor="#278F57"/>
                                                        </textAttrs>
                                                   </DOMTextRun>
                                              </textRuns>
                                         </DOMDynamicText>
+                                        <DOMSymbolInstance libraryItemName="BoxScale" centerPoint3DX="215" centerPoint3DY="35">
+                                             <matrix>
+                                                  <Matrix tx="190" ty="10"/>
+                                             </matrix>
+                                             <transformationPoint>
+                                                  <Point x="25" y="25"/>
+                                             </transformationPoint>
+                                        </DOMSymbolInstance>
+                                        <DOMSymbolInstance libraryItemName="BoxScale" centerPoint3DX="222.45" centerPoint3DY="89">
+                                             <matrix>
+                                                  <Matrix a="2" tx="190" ty="64"/>
+                                             </matrix>
+                                             <transformationPoint>
+                                                  <Point/>
+                                             </transformationPoint>
+                                        </DOMSymbolInstance>
+                                        <DOMComponentInstance libraryItemName="Box" centerPoint3DX="206.3" centerPoint3DY="216.3" uniqueID="2">
+                                             <matrix>
+                                                  <Matrix tx="181.3" ty="191.3"/>
+                                             </matrix>
+                                             <transformationPoint>
+                                                  <Point x="25" y="25"/>
+                                             </transformationPoint>
+                                             <dataBindingXML><![CDATA[<component metaDataFetched='true' schemaUrl='' schemaOperation='' sceneRootLabel='Main' oldCopiedComponentPath='2'>
+</component>
+]]></dataBindingXML>
+                                             <parametersAsXML><![CDATA[   <property id="test">
+      <Inspectable name="test" variable="test" category="" verbose="0" defaultValue="10" type="Number"/>
+   </property>
+   <property id="test2">
+      <Inspectable name="test2" variable="test2" category="" verbose="0" defaultValue="alter" type="String"/>
+   </property>
+]]></parametersAsXML>
+                                        </DOMComponentInstance>
                                    </elements>
                               </DOMFrame>
                          </frames>

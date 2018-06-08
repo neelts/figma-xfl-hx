@@ -31,6 +31,13 @@ class Matrix {
 		ty *= sy;
 	}
 
+	public function scales(sx:Float, sy:Float):Void {
+		a *= sx;
+		b *= sy;
+		c *= sx;
+		d *= sy;
+	}
+
 	public function rotate(theta:Float):Void {
 		var cos = Math.cos(theta);
 		var sin = Math.sin(theta);
